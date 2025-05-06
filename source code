@@ -1,0 +1,166 @@
+@echo off
+setlocal EnableDelayedExpansion
+title Custom Resolution and Game Setup Utility
+mode con: cols=80 lines=30
+color 0C
+cls
+
+:: Create simpler UI that works in all Windows environments
+echo.
+echo --------------------------------------------------------------
+echo             CUSTOM RESOLUTION AND GAME SETUP UTILITY
+echo --------------------------------------------------------------
+echo.
+
+:: Check for .NET Runtime
+echo Checking for .NET Runtime 9.0...
+echo [                                                  ]
+ping -n 2 localhost > nul
+echo [=================================================]
+echo.
+
+set "dotNetInstalled=false"
+dotnet --list-runtimes > dotnet_check.txt 2>nul
+findstr /C:"Microsoft.NETCore.App 9.0" dotnet_check.txt > nul 2>nul
+if %errorlevel% equ 0 (
+    set "dotNetInstalled=true"
+    echo [SUCCESS] .NET Runtime 9.0 is already installed!
+) else (
+    echo [WARNING] .NET Runtime 9.0 was not detected.
+    echo.
+    echo --------------------------------------------------------------
+    echo  Would you like to download .NET 9.0 SDK now?
+    echo --------------------------------------------------------------
+    echo  [Y] Yes                 [N] No
+    echo --------------------------------------------------------------
+    
+    choice /C YN /N /M "> Your choice: "
+    if errorlevel 2 goto skipDotNet
+    
+    echo.
+    echo [DOWNLOADING] .NET 9.0 SDK...
+    echo [                                                  ]
+    powershell -Command "Invoke-WebRequest -Uri 'https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-9.0.203-windows-x64-installer' -OutFile '%TEMP%\dotnet_installer.exe'"
+    echo [=================================================]
+    
+    echo.
+    echo [INSTALLING] .NET 9.0 SDK...
+    start /wait %TEMP%\dotnet_installer.exe
+    
+    echo.
+    echo [SUCCESS] .NET 9.0 SDK installation complete!
+)
+del dotnet_check.txt 2>nul
+
+:skipDotNet
+echo.
+
+:: Download CRU (Custom Resolution Utility)
+echo [DOWNLOADING] Custom Resolution Utility (CRU)...
+echo.
+echo --------------------------------------------------------------
+echo  Downloading: CRU 1.5.3
+echo --------------------------------------------------------------
+
+if not exist "%USERPROFILE%\Downloads\CRU\" (
+    mkdir "%USERPROFILE%\Downloads\CRU\" >nul 2>nul
+)
+
+powershell -Command "$progressPreference = 'silentlyContinue'; Invoke-WebRequest -Uri 'https://www.monitortests.com/download/cru/cru-1.5.3.zip' -OutFile '%USERPROFILE%\Downloads\CRU\cru-1.5.3.zip'"
+
+echo [EXTRACTING] CRU files...
+powershell -Command "$progressPreference = 'silentlyContinue'; Expand-Archive -Path '%USERPROFILE%\Downloads\CRU\cru-1.5.3.zip' -DestinationPath '%USERPROFILE%\Downloads\CRU\' -Force"
+echo [SUCCESS] CRU has been downloaded and extracted to your Downloads folder.
+echo.
+
+:: Ask for custom resolution
+echo --------------------------------------------------------------
+echo                     CUSTOM RESOLUTION SETUP
+echo --------------------------------------------------------------
+echo.
+
+echo Enter your desired resolution settings:
+echo.
+echo --------------------------------------------------------------
+set /p customWidth="Width (e.g., 1920): "
+set /p customHeight="Height (e.g., 1080): "
+set /p customRefresh="Refresh Rate in Hz (e.g., 60): "
+echo --------------------------------------------------------------
+
+echo.
+echo [SUCCESS] Custom resolution set to %customWidth%x%customHeight%@%customRefresh%Hz
+echo.
+
+:: Ask about games
+echo --------------------------------------------------------------
+echo                      GAME SELECTION MENU
+echo --------------------------------------------------------------
+echo.
+echo  Which game do you primarily play?
+echo.
+echo  [1] Fortnite - True Stretched Resolution
+echo  [2] Other Games - Custom Resolution
+echo.
+echo --------------------------------------------------------------
+echo.
+
+choice /C 12 /N /M "> Select option (1-2): "
+set gameChoice=%errorlevel%
+
+if %gameChoice% equ 1 (
+    echo.
+    echo [DOWNLOADING] AlphaRes for Fortnite stretched resolution...
+    echo --------------------------------------------------------------
+    echo  Downloading: AlphaRes x64
+    echo --------------------------------------------------------------
+    
+    if not exist "%USERPROFILE%\Downloads\AlphaRes\" (
+        mkdir "%USERPROFILE%\Downloads\AlphaRes\" >nul 2>nul
+    )
+    
+    powershell -Command "$progressPreference = 'silentlyContinue'; Invoke-WebRequest -Uri 'https://github.com/braycarlson/alphares/releases/download/1.1/alphares_x64.exe' -OutFile '%USERPROFILE%\Downloads\AlphaRes\alphares_x64.exe'"
+    
+    echo.
+    echo [SUCCESS] AlphaRes has been downloaded to your Downloads folder.
+    echo.
+    echo --------------------------------------------------------------
+    echo              FORTNITE STRETCHED RESOLUTION
+    echo --------------------------------------------------------------
+    echo.
+    echo  INSTRUCTIONS:
+    echo.
+    echo  1. Run AlphaRes from your Downloads\AlphaRes folder
+    echo  2. Enter your custom resolution: %customWidth%x%customHeight%
+    echo  3. Apply the settings before launching Fortnite
+    echo  4. Enjoy your true stretched resolution!
+) else (
+    echo.
+    echo --------------------------------------------------------------
+    echo             CUSTOM RESOLUTION FOR OTHER GAMES
+    echo --------------------------------------------------------------
+    echo.
+    echo  INSTRUCTIONS:
+    echo.
+    echo  1. Run CRU.exe from your Downloads\CRU folder
+    echo  2. Click 'Add' to create a new resolution
+    echo  3. Enter %customWidth% as the horizontal resolution
+    echo  4. Enter %customHeight% as the vertical resolution
+    echo  5. Set %customRefresh% as the refresh rate
+    echo  6. Click OK and then OK again to save
+    echo  7. Run restart64.exe from the CRU folder to apply changes
+)
+
+echo.
+echo --------------------------------------------------------------
+echo                       SETUP COMPLETE
+echo --------------------------------------------------------------
+echo.
+echo [SUCCESS] Your custom resolution tools are ready to use!
+echo.
+echo --------------------------------------------------------------
+echo  Thanks for using the Resolution Setup Toolkit
+echo --------------------------------------------------------------
+echo.
+echo Press any key to exit...
+pause >nul
+exit /b 0
